@@ -167,6 +167,7 @@ class LocalConnector(Connector):
             escaped = content.replace("'", "''")
             cmd = f"Set-Content -Path '{path}' -Value '{escaped}' -Encoding UTF8"
         else:
+            escaped = content.replace("'", "'\\''")
             cmd = f"cat > '{path}' << 'AICLI_EOF'\n{content}\nAICLI_EOF"
         result = await self.exec(cmd)
         if result.exit_code != 0:

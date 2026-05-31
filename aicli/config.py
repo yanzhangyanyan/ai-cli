@@ -3,8 +3,6 @@ import os
 from pathlib import Path
 from openai import OpenAI
 
-from .i18n import t, get_lang
-
 _CONFIG_DIR = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
 _CONFIG_PATH = os.path.join(_CONFIG_DIR, "aicli", "config.json")
 
@@ -62,42 +60,42 @@ def list_available_models(base_url: str, api_key: str) -> list[dict]:
 def first_run_setup():
     print()
     print("=" * 50)
-    print("  aiCLI — LLM Setup Wizard")
+    print("  aicli 首次运行 — LLM 配置向导")
     print("=" * 50)
     print()
-    print("  aiCLI needs an LLM API to provide AI capabilities.")
-    print("  Supports any OpenAI-compatible API (LiteLLM / OpenAI / Zhipu / ...)")
+    print("  aicli 需要连接大模型 API 来提供 AI 能力。")
+    print("  支持任何 OpenAI 兼容 API（LiteLLM / OpenAI / 智谱 / ...）")
     print()
 
-    base_url = input(f"  API URL [{_DEFAULT_BASE_URL}]: ").strip()
+    base_url = input(f"  API 地址 [{_DEFAULT_BASE_URL}]: ").strip()
     if not base_url:
         base_url = _DEFAULT_BASE_URL
 
     api_key = input("  API Key: ").strip()
 
     print()
-    print(f"  Fetching available models...")
+    print(f"  正在获取可用模型...")
     models = list_available_models(base_url, api_key)
     if not models or models[0].get("id", "").startswith("error"):
         err = models[0]["id"] if models else "unknown"
-        print(f"  Connection failed: {err}")
+        print(f"  连接失败: {err}")
         print()
-        manual = input("  Enter model name manually (leave empty to cancel): ").strip()
+        manual = input("  输入模型名称手动配置（留空退出）: ").strip()
         if not manual:
-            print("  Setup cancelled.")
+            print("  配置取消。")
             return False
         save_config({"base_url": base_url, "api_key": api_key, "model": manual})
-        print(f"\n  OK model configured: {manual}")
-        print(f"  Config saved to: {_CONFIG_PATH}")
+        print(f"\n  OK 已配置模型: {manual}")
+        print(f"  配置保存到: {_CONFIG_PATH}")
         return True
 
-    print(f"  Found {len(models)} models:")
+    print(f"  找到 {len(models)} 个模型:")
     print()
     for i, m in enumerate(models, 1):
         print(f"    [{i:2d}] {m['id']}")
 
     print()
-    idx = input(f"  Select model number [1]: ").strip()
+    idx = input(f"  选择模型编号 [1]: ").strip()
     if not idx:
         idx = "1"
     try:
@@ -108,10 +106,10 @@ def first_run_setup():
     save_config({"base_url": base_url, "api_key": api_key, "model": selected})
 
     print()
-    print(f"  OK setup complete!")
-    print(f"     API:   {base_url}")
-    print(f"     Model: {selected}")
-    print(f"     Config: {_CONFIG_PATH}")
+    print(f"  OK 配置完成!")
+    print(f"     API:  {base_url}")
+    print(f"     模型: {selected}")
+    print(f"     配置: {_CONFIG_PATH}")
     print()
     return True
 
@@ -121,13 +119,13 @@ def config_command(args: list[str]):
 
     if not args or args[0] == "show":
         if not cfg:
-            print("  Not configured. Run aicli to start the setup wizard.")
+            print("  未配置。运行 aicli 进入首次配置向导。")
             return
         print(f"  API:      {cfg.get('base_url', '?')}")
-        print(f"  Model:    {cfg.get('model', '?')}")
+        print(f"  模型:     {cfg.get('model', '?')}")
         print(f"  Key:      {'*' * 8}{cfg.get('api_key', '')[-4:]}")
-        print(f"  Thinking: {'on' if cfg.get('thinking', False) else 'off'}")
-        print(f"  File:     {_CONFIG_PATH}")
+        print(f"  思考模式: {'开启' if cfg.get('thinking', False) else '关闭'}")
+        print(f"  文件:     {_CONFIG_PATH}")
         return
 
     cmd = args[0]
@@ -141,56 +139,56 @@ def config_command(args: list[str]):
             new_model = args[1]
             cfg["model"] = new_model
             save_config(cfg)
-            print(f"  OK model switched to: {new_model}")
+            print(f"  OK 模型已切换为: {new_model}")
         else:
             base_url = cfg.get("base_url", "")
             api_key = cfg.get("api_key", "")
             if not base_url:
-                print("  No API configured. Run aicli config setup first.")
+                print("  未配置 API，先运行 aicli config setup")
                 return
-            print(f"  Fetching available models...")
+            print(f"  正在获取可用模型...")
             models = list_available_models(base_url, api_key)
             if not models or models[0].get("id", "").startswith("error"):
-                print("  Failed to fetch models. Check API connection.")
+                print("  获取失败，请检查 API 连接")
                 return
             for i, m in enumerate(models, 1):
                 current = " <--" if m["id"] == cfg.get("model") else ""
                 print(f"    [{i:2d}] {m['id']}{current}")
             print()
-            idx = input("  Select number to switch (empty to cancel): ").strip()
+            idx = input("  选择编号切换（留空取消）: ").strip()
             if idx:
                 try:
                     cfg["model"] = models[int(idx) - 1]["id"]
                     save_config(cfg)
-                    print(f"  OK switched to: {cfg['model']}")
+                    print(f"  OK 已切换为: {cfg['model']}")
                 except (ValueError, IndexError):
-                    print("  Invalid selection")
+                    print("  无效选择")
 
     elif cmd == "thinking":
         if len(args) > 1:
-            val = args[1].lower() in ("on", "true", "1", "yes")
+            val = args[1].lower() in ("on", "true", "1", "yes", "开启")
         else:
             val = not cfg.get("thinking", False)
         cfg["thinking"] = val
         save_config(cfg)
-        print(f"  OK thinking mode: {'on' if val else 'off'}")
+        print(f"  OK 思考模式: {'开启' if val else '关闭'}")
 
     elif cmd == "api":
-        new_url = input(f"  API URL [{cfg.get('base_url', '')}]: ").strip()
+        new_url = input(f"  API 地址 [{cfg.get('base_url', '')}]: ").strip()
         new_key = input(f"  API Key [***]: ").strip()
         if new_url:
             cfg["base_url"] = new_url
         if new_key:
             cfg["api_key"] = new_key
         save_config(cfg)
-        print(f"  OK API updated")
+        print(f"  OK API 已更新")
 
     elif cmd == "reset":
         if os.path.exists(_CONFIG_PATH):
             os.remove(_CONFIG_PATH)
-            print("  OK config cleared")
+            print("  OK 配置已清除")
         else:
-            print("  No config file")
+            print("  无配置文件")
 
     else:
-        print("  Usage: config [show|setup|model|thinking|api|reset]")
+        print("  用法: config [show|setup|model|thinking|api|reset]")

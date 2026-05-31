@@ -307,6 +307,7 @@ class SSHConnector(Connector):
         return result.stdout
 
     async def file_write(self, path: str, content: str) -> None:
+        escaped = content.replace("'", "'\\''")
         cmd = f"cat > '{path}' << 'AICLI_EOF'\n{content}\nAICLI_EOF"
         result = await self.exec(cmd)
         if result.exit_code != 0:

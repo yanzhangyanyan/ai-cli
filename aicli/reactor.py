@@ -6,7 +6,6 @@ import time as _time
 from .connectors.base import Connector, ExecResult
 from .llm import SYSTEM_PROMPT, build_env_info, build_context_section, chat
 from .session import SessionManager
-from .i18n import t
 
 _MAX_STEPS = 200
 _MAX_OBSERVE_CHARS = 8000
@@ -30,7 +29,7 @@ def _truncate(text: str, limit: int = _MAX_OBSERVE_CHARS) -> str:
         return text
     head = limit // 2 - 25
     tail = limit // 2 - 25
-    return text[:head] + f"\n... [truncated, {len(text)} chars total, keeping head/tail] ...\n" + text[-tail:]
+    return text[:head] + f"\n... [截断，共 {len(text)} 字符，保留头尾] ...\n" + text[-tail:]
 
 
 def _count_messages_chars(messages: list[dict]) -> int:
@@ -57,11 +56,11 @@ def _parse_step(text: str) -> dict | None:
     if is_done:
         return {
             "think": think_m.group(1).strip() if think_m else "",
-            "goal": "task completed",
+            "goal": "任务完成",
             "command": "",
-            "risk": "safe",
+            "risk": "安全",
             "control": "DONE",
-            "summary": summary_m.group(1).strip() if summary_m else "task completed",
+            "summary": summary_m.group(1).strip() if summary_m else "任务完成",
         }
 
     command = cmd_m.group(1).strip() if cmd_m else ""
@@ -76,7 +75,7 @@ def _parse_step(text: str) -> dict | None:
         "think": think_m.group(1).strip() if think_m else "",
         "goal": goal_m.group(1).strip() if goal_m else "",
         "command": command,
-        "risk": risk_m.group(1).strip() if risk_m else "safe",
+        "risk": risk_m.group(1).strip() if risk_m else "安全",
         "control": control,
         "summary": "",
     }
@@ -95,12 +94,13 @@ def _is_forced_confirm(command: str) -> bool:
 def _resolve_control(step: dict) -> str:
     control = step.get("control", "CONFIRM")
     command = step.get("command", "")
+    risk = step.get("risk", "安全")
 
     if control == "DONE" or control == "ASK":
         return control
 
     if control == "AUTO":
-        if step.get("risk") in ("medium", "high", "中", "高"):
+        if step.get("risk") in ("中", "高"):
             return "CONFIRM"
         if _is_forced_confirm(command):
             return "CONFIRM"
@@ -114,10 +114,9 @@ def _print_plan(reply: str, out):
     plan_end = reply.find("PLAN_END")
     if plan_start != -1 and plan_end != -1:
         plan = reply[plan_start + len("PLAN_START"):plan_end].strip()
-        sep = "=" * 50
-        out(t("plan_title", sep=sep))
+        out(f"\n{'=' * 50}")
         out(plan)
-        out(sep)
+        out(f"{'=' * 50}")
         after_plan = reply[plan_end + len("PLAN_END"):].strip()
         if after_plan:
             out(f"\n  {after_plan}")
@@ -126,35 +125,29 @@ def _print_plan(reply: str, out):
 
 
 def _print_step(step_num: int, step: dict, out):
-    risk_icon = {"safe": "*", "low": "*", "medium": "!", "high": "!!",
-                 "安全": "*", "低": "*", "中": "!", "高": "!!"}.get(step.get("risk", ""), "*")
-    risk_val = step.get("risk", "?")
-    control_val = step.get("control", "")
-    control_label = {"AUTO": t("auto_exec").strip(), "CONFIRM": "confirm", "ASK": "ask"}.get(control_val, control_val)
-    sep = "─" * 50
-    out(t("step_header", sep=sep))
-    out(t("step_num", n=step_num))
+    risk_icon = {"安全": "*", "低": "*", "中": "!", "高": "!!"}.get(step.get("risk", ""), "*")
+    control_label = {"AUTO": "自动执行", "CONFIRM": "需确认", "ASK": "提问"}.get(step.get("control", ""), "")
+    out(f"\n{'─' * 50}")
+    out(f"  Step {step_num}")
     if step.get("think"):
-        out(t("step_think", think=step['think'][:200]))
-    out(t("step_goal", goal=step.get('goal', '?')))
+        out(f"  THINK: {step['think'][:200]}")
+    out(f"  GOAL:  {step.get('goal', '?')}")
     if step.get("command"):
-        out(t("step_cmd", cmd=step['command']))
-    out(t("step_risk", risk=risk_val, icon=risk_icon, label=control_label))
+        out(f"  CMD:   {step['command']}")
+    out(f"  RISK:  {step.get('risk', '?')} {risk_icon}  [{control_label}]")
 
 
 def _print_result(result: ExecResult, out, already_streamed: bool = False):
-    if result.exit_code == 0:
-        out(t("result_ok", ms=result.duration_ms))
-    else:
-        out(t("result_fail", code=result.exit_code, ms=result.duration_ms))
+    status = "[OK]" if result.exit_code == 0 else f"[X] (exit {result.exit_code})"
+    out(f"\n{status} | {result.duration_ms}ms")
     if already_streamed:
         if result.stderr and result.exit_code != 0:
-            out(t("stderr_label", stderr=result.stderr))
+            out(f"[stderr] {result.stderr}")
         return
     if result.stdout:
         out(result.stdout.strip())
     if result.stderr and result.exit_code != 0:
-        out(t("stderr_label", stderr=result.stderr))
+        out(f"[stderr] {result.stderr}")
 
 
 def _compress_messages(messages: list[dict], task: str, out) -> list[dict]:
@@ -180,20 +173,20 @@ def _compress_messages(messages: list[dict], task: str, out) -> list[dict]:
             exit_code = "0"
             key_info = ""
             for line in observe.split("\n"):
-                if line.startswith("exit_code:") or line.startswith("退出码:"):
-                    exit_code = line.split(":")[-1].strip()
-                if "error" in line.lower() or "fail" in line.lower() or "错误" in line:
+                if line.startswith("退出码:"):
+                    exit_code = line.split(":")[1].strip()
+                if "错误" in line or "error" in line.lower() or "fail" in line.lower():
                     key_info = line.strip()[:100]
             status = "OK" if exit_code == "0" else f"FAIL({exit_code})"
             detail = f" — {key_info}" if key_info else ""
             if goal:
                 completed_steps.append(f"  - {goal}: {status}{detail}")
 
-    summary_lines = "\n".join(completed_steps) if completed_steps else "(earlier steps completed)"
+    summary_lines = "\n".join(completed_steps) if completed_steps else "(早期步骤已执行)"
     summary = (
-        f"[Context compression] Original task: {task}\n"
-        f"Completed {len(completed_steps)} steps:\n{summary_lines}\n"
-        f"The above steps are complete. Continue with remaining steps."
+        f"[上下文压缩] 原始任务: {task}\n"
+        f"已完成 {len(completed_steps)} 步:\n{summary_lines}\n"
+        f"以上步骤已执行完毕，继续后续步骤。"
     )
 
     compressed = [system_msg]
@@ -202,7 +195,7 @@ def _compress_messages(messages: list[dict], task: str, out) -> list[dict]:
 
     old_chars = _count_messages_chars(messages)
     new_chars = _count_messages_chars(compressed)
-    out(t("compressed", old=len(messages), new=len(compressed), old_chars=old_chars, new_chars=new_chars))
+    out(f"\n  [context compressed: {len(messages)} -> {len(compressed)} msgs, {old_chars} -> {new_chars} chars]\n")
 
     return compressed
 
@@ -231,7 +224,7 @@ async def _exec_with_heartbeat(connector, command, out):
             elapsed = int(_time.monotonic() - last_output_time)
             if elapsed >= 5:
                 idle_dots += 1
-                out(t("waiting", sec=elapsed))
+                out(f"\r  [waiting... {elapsed}s]")
 
     hb = asyncio.ensure_future(_heartbeat())
     try:
@@ -282,7 +275,7 @@ async def run_task(
             messages = _compress_messages(messages, task, out)
             compress_count += 1
 
-        out(t("thinking"))
+        out("  [thinking...]")
         try:
             reply = chat(messages)
         except Exception as e:
@@ -297,16 +290,16 @@ async def run_task(
             _print_plan(reply, out)
             planned = True
 
-            user_input = inp(t("plan_confirm"))
+            user_input = inp("\n  确认执行此方案？[Y/调整意见]: ")
             if user_input.lower() in ("y", "yes", ""):
                 messages.append({"role": "assistant", "content": reply})
-                messages.append({"role": "user", "content": "Plan confirmed. Start executing the first step."})
+                messages.append({"role": "user", "content": "方案已确认，开始执行第一步。"})
                 continue
             else:
                 messages.append({"role": "assistant", "content": reply})
-                messages.append({"role": "user", "content": f"User feedback: {user_input}. Please adjust the plan."})
+                messages.append({"role": "user", "content": f"用户反馈：{user_input}。请调整方案。"})
                 planned = False
-                out(t("feedback"))
+                out("  [feedback] 调整方案...\n")
                 continue
 
         step = _parse_step(reply)
@@ -315,7 +308,7 @@ async def run_task(
             out(f"\n  AI: {reply[:300]}")
             messages.append({
                 "role": "user",
-                "content": "Please strictly follow the format for the next step: THINK/GOAL/CMD/RISK/CONTROL, or CONTROL: DONE to finish.",
+                "content": "请严格按格式输出下一步: THINK/GOAL/CMD/RISK/CONTROL，或 CONTROL: DONE 结束。",
             })
             continue
 
@@ -324,12 +317,11 @@ async def run_task(
         step_count += 1
 
         if step["control"] == "DONE":
-            sep = "=" * 50
-            out(t("done_header", sep=sep))
-            out(t("done_summary", count=executed_count, comp=compress_count))
+            out(f"\n{'=' * 50}")
+            out(f"[DONE] | {executed_count} commands executed (compressed {compress_count}x)")
             if step.get("summary"):
                 out(f"       {step['summary']}")
-            out(t("done_footer", sep=sep))
+            out("")
             return step.get("summary", "task completed")
 
         _print_step(step_count, step, out)
@@ -339,27 +331,27 @@ async def run_task(
                 out(f"  {step['think']}")
             user_answer = inp("  > ")
             messages.append({"role": "assistant", "content": reply})
-            messages.append({"role": "user", "content": f"User answer: {user_answer}"})
+            messages.append({"role": "user", "content": f"用户回答: {user_answer}"})
             out("")
             continue
 
         if control == "CONFIRM" and not auto_confirm:
-            user_input = inp(t("confirm_exec")).lower()
+            user_input = inp("  [Y]执行 / [n]跳过 / [q]退出 / <反馈>: ").lower()
             if user_input == "q":
-                out(t("aborted"))
+                out("  [ABORT] task cancelled\n")
                 return f"user aborted at step {step_count}"
             if user_input == "n":
                 messages.append({"role": "assistant", "content": reply})
                 messages.append({"role": "user", "content": f"user rejected: {step['command']}. adjust plan."})
-                out(t("skipped"))
+                out("  skipped\n")
                 continue
             if user_input not in ("y", "yes", ""):
                 messages.append({"role": "assistant", "content": reply})
                 messages.append({"role": "user", "content": f"user feedback (do NOT execute previous command, adjust based on feedback): {user_input}"})
-                out(t("feedback"))
+                out("  [feedback] adjusting...\n")
                 continue
         elif control == "AUTO":
-            out(t("auto_exec"))
+            out("  [auto] executing...")
 
         messages.append({"role": "assistant", "content": reply})
 
@@ -368,21 +360,21 @@ async def run_task(
                 connector, step["command"], out,
             )
         except KeyboardInterrupt:
-            out(t("user_interrupt"))
-            feedback = inp(t("interrupt_choice"))
+            out("\n\n  ⏸ 用户中断（Ctrl+C）")
+            feedback = inp("  [r]重试 / [k]终止 / <反馈意见>: ")
             if feedback.lower() == "k":
-                out(t("aborted"))
+                out("  [ABORT] task cancelled\n")
                 return f"user aborted at step {step_count}"
             else:
-                messages.append({"role": "user", "content": f"User interrupted current step ({step['command']}), feedback: {feedback}. Please adjust based on feedback."})
-                out(t("feedback"))
+                messages.append({"role": "user", "content": f"用户中断了当前步骤（{step['command']}），反馈：{feedback}。请根据反馈调整。"})
+                out("  [feedback] adjusting...\n")
                 continue
 
         if result.exit_code == -2:
-            out("\n\n  ⏸ Command interrupted")
-            feedback = inp(t("interrupt_choice"))
+            out("\n\n  ⏸ 命令被中断")
+            feedback = inp("  [r]重试 / [k]终止 / <反馈意见>: ")
             if feedback.lower() == "k":
-                out(t("aborted"))
+                out("  [ABORT] task cancelled\n")
                 return f"user aborted at step {step_count}"
             if feedback.lower() in ("r", "y", "yes", ""):
                 out("  [retry] retrying...\n")
@@ -391,14 +383,14 @@ async def run_task(
                         connector, step["command"], out,
                     )
                 except KeyboardInterrupt:
-                    out("\n  [ABORT] second interrupt\n")
+                    out("\n  [ABORT] 二次中断\n")
                     return f"user aborted at step {step_count}"
                 if result.exit_code == -2:
-                    out("\n  [ABORT] second interrupt\n")
+                    out("\n  [ABORT] 二次中断\n")
                     return f"user aborted at step {step_count}"
             else:
-                messages.append({"role": "user", "content": f"User interrupted current step ({step['command']}), feedback: {feedback}. Please adjust based on feedback."})
-                out(t("feedback"))
+                messages.append({"role": "user", "content": f"用户中断了当前步骤（{step['command']}），反馈：{feedback}。请根据反馈调整。"})
+                out("  [feedback] adjusting...\n")
                 continue
 
         if stream_buf:
@@ -408,13 +400,13 @@ async def run_task(
         _print_result(result, out, already_streamed=bool(stream_buf))
 
         observe = (
-            f"command: {result.command}\n"
-            f"exit_code: {result.exit_code}\n"
-            f"duration: {result.duration_ms}ms\n"
-            f"output:\n{_truncate(result.stdout)}\n"
+            f"命令: {result.command}\n"
+            f"退出码: {result.exit_code}\n"
+            f"耗时: {result.duration_ms}ms\n"
+            f"输出:\n{_truncate(result.stdout)}\n"
         )
         if result.stderr and result.exit_code != 0:
-            observe += f"stderr:\n{_truncate(result.stderr)}\n"
+            observe += f"错误输出:\n{_truncate(result.stderr)}\n"
 
         messages.append({"role": "user", "content": observe})
 

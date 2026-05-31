@@ -30,119 +30,118 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="aicli_task",
-            description="Give aiCLI a natural language task, it autonomously plans and executes. "
-                        "aiCLI connects to the remote machine, probes the environment, plans steps, "
-                        "and executes step by step with full transparency. "
-                        "Just provide the goal and connection info. "
-                        "Supports context (project background) and session_memory (cross-task memory).",
+            description="给 aicli 一个自然语言任务，aicli 自带 AI 自动规划并执行。"
+                        "aicli 会连接远程机器、探测环境、规划步骤、逐步执行，全程白盒输出。"
+                        "只需告诉它目标和连接信息。"
+                        "支持 context（项目背景）和 session_memory（跨任务记忆）。",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "task": {"type": "string", "description": "Task description, e.g. 'Install Docker and Docker Compose'"},
-                    "host": {"type": "string", "description": "Target host IP or domain"},
-                    "port": {"type": "integer", "description": "SSH port, default 22", "default": 22},
-                    "username": {"type": "string", "description": "Username, default root", "default": "root"},
-                    "password": {"type": "string", "description": "Password"},
-                    "client_keys": {"type": "array", "items": {"type": "string"}, "description": "SSH private key file paths"},
-                    "auto_confirm": {"type": "boolean", "description": "Auto-confirm high-risk operations (default false)", "default": False},
-                    "context": {"type": "string", "description": "Project context/background info for the Agent", "default": ""},
-                    "session_memory": {"type": "array", "items": {"type": "string"}, "description": "Previous task summary list for cross-task memory", "default": []},
+                    "task": {"type": "string", "description": "任务描述，如'安装 Docker 和 Docker Compose'"},
+                    "host": {"type": "string", "description": "目标主机 IP 或域名"},
+                    "port": {"type": "integer", "description": "SSH 端口，默认22", "default": 22},
+                    "username": {"type": "string", "description": "用户名，默认root", "default": "root"},
+                    "password": {"type": "string", "description": "密码"},
+                    "client_keys": {"type": "array", "items": {"type": "string"}, "description": "SSH 私钥文件路径列表"},
+                    "auto_confirm": {"type": "boolean", "description": "自动确认高风险操作（默认false）", "default": False},
+                    "context": {"type": "string", "description": "项目上下文/背景信息，Agent 会参考", "default": ""},
+                    "session_memory": {"type": "array", "items": {"type": "string"}, "description": "之前的任务摘要列表，用于跨任务记忆", "default": []},
                 },
                 "required": ["task", "host"],
             },
         ),
         Tool(
             name="aicli_local_task",
-            description="Execute a task locally. aiCLI runs commands on the local machine intelligently, no SSH needed. "
-                        "Suitable for local ops, software installation, system configuration, etc.",
+            description="在本机执行任务。aicli 会在本机（运行 aicli 的机器上）智能执行命令，无需 SSH。"
+                        "适用于本机运维、软件安装、系统配置等场景。",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "task": {"type": "string", "description": "Task description, e.g. 'Check local Docker status'"},
-                    "auto_confirm": {"type": "boolean", "description": "Auto-confirm high-risk operations (default false)", "default": False},
-                    "context": {"type": "string", "description": "Project context/background info", "default": ""},
+                    "task": {"type": "string", "description": "任务描述，如'检查本机Docker状态'"},
+                    "auto_confirm": {"type": "boolean", "description": "自动确认高风险操作（默认false）", "default": False},
+                    "context": {"type": "string", "description": "项目上下文/背景信息", "default": ""},
                 },
                 "required": ["task"],
             },
         ),
         Tool(
             name="aicli_connect",
-            description="Connect to a remote host via SSH, automatically probe system info. Returns session_id and system overview.",
+            description="通过SSH连接远程主机，连接后自动探测系统信息。返回session_id和系统概况。",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "host": {"type": "string", "description": "Target host IP or domain"},
-                    "port": {"type": "integer", "description": "SSH port, default 22", "default": 22},
-                    "username": {"type": "string", "description": "Username, default root", "default": "root"},
-                    "password": {"type": "string", "description": "Password"},
-                    "client_keys": {"type": "array", "items": {"type": "string"}, "description": "SSH private key file paths"},
+                    "host": {"type": "string", "description": "目标主机IP或域名"},
+                    "port": {"type": "integer", "description": "SSH端口，默认22", "default": 22},
+                    "username": {"type": "string", "description": "用户名，默认root", "default": "root"},
+                    "password": {"type": "string", "description": "密码"},
+                    "client_keys": {"type": "array", "items": {"type": "string"}, "description": "SSH 私钥文件路径列表"},
                 },
                 "required": ["host"],
             },
         ),
         Tool(
             name="aicli_exec",
-            description="Execute a command on a remote host, returns output in real time.",
+            description="在远程主机上执行命令，实时返回输出。",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "session_id": {"type": "string", "description": "Session ID"},
-                    "command": {"type": "string", "description": "Command to execute"},
-                    "timeout": {"type": "integer", "description": "Timeout in seconds, default 30", "default": 30},
+                    "session_id": {"type": "string", "description": "会话ID"},
+                    "command": {"type": "string", "description": "要执行的命令"},
+                    "timeout": {"type": "integer", "description": "超时秒数，默认30", "default": 30},
                 },
                 "required": ["session_id", "command"],
             },
         ),
         Tool(
             name="aicli_file_read",
-            description="Read file content from a remote host",
+            description="读取远程主机上的文件内容",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "session_id": {"type": "string", "description": "Session ID"},
-                    "path": {"type": "string", "description": "Absolute file path"},
+                    "session_id": {"type": "string", "description": "会话ID"},
+                    "path": {"type": "string", "description": "文件绝对路径"},
                 },
                 "required": ["session_id", "path"],
             },
         ),
         Tool(
             name="aicli_file_write",
-            description="Write content to a file on a remote host",
+            description="写入内容到远程主机文件",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "session_id": {"type": "string", "description": "Session ID"},
-                    "path": {"type": "string", "description": "Absolute file path"},
-                    "content": {"type": "string", "description": "Content to write"},
+                    "session_id": {"type": "string", "description": "会话ID"},
+                    "path": {"type": "string", "description": "文件绝对路径"},
+                    "content": {"type": "string", "description": "要写入的内容"},
                 },
                 "required": ["session_id", "path", "content"],
             },
         ),
         Tool(
             name="aicli_probe",
-            description="Probe remote host system information",
+            description="探测远程主机系统信息",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "session_id": {"type": "string", "description": "Session ID"},
+                    "session_id": {"type": "string", "description": "会话ID"},
                 },
                 "required": ["session_id"],
             },
         ),
         Tool(
             name="aicli_disconnect",
-            description="Disconnect from a remote host",
+            description="断开远程连接",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "session_id": {"type": "string", "description": "Session ID"},
+                    "session_id": {"type": "string", "description": "会话ID"},
                 },
                 "required": ["session_id"],
             },
         ),
         Tool(
             name="aicli_list_sessions",
-            description="List all active remote connections",
+            description="列出当前所有活跃的远程连接",
             inputSchema={"type": "object", "properties": {}},
         ),
     ]
@@ -178,7 +177,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             probe_data = result["probe"]
             _session_timestamps[session_id] = time.monotonic()
 
-            _stderr_out(f"    local | {probe_data['os']} | {probe_data['cpu_cores']} cores / {probe_data['memory_gb']}GB")
+            _stderr_out(f"    local | {probe_data['os']} | {probe_data['cpu_cores']}核/{probe_data['memory_gb']}GB")
 
             connector = sessions.get(session_id)
 
@@ -228,7 +227,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             probe_data = result["probe"]
             _session_timestamps[session_id] = time.monotonic()
 
-            _stderr_out(f"    connected | {probe_data['os']} | {probe_data['cpu_cores']} cores / {probe_data['memory_gb']}GB")
+            _stderr_out(f"    connected | {probe_data['os']} | {probe_data['cpu_cores']}核/{probe_data['memory_gb']}GB")
 
             connector = sessions.get(session_id)
 
