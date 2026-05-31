@@ -1,4 +1,5 @@
 import json
+import os
 import platform
 from pathlib import Path
 
@@ -317,8 +318,8 @@ def t(key: str, **kwargs) -> str:
 
 def init_lang_from_config():
     global _LANG
-    config_dir = Path.home() / ".config" / "aicli"
-    lang_file = config_dir / "lang.json"
+    config_dir = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
+    lang_file = Path(config_dir) / "aicli" / "lang.json"
     if lang_file.exists():
         try:
             data = json.loads(lang_file.read_text(encoding="utf-8"))
@@ -328,9 +329,10 @@ def init_lang_from_config():
 
 
 def save_lang(lang: str):
-    config_dir = Path.home() / ".config" / "aicli"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    lang_file = config_dir / "lang.json"
+    config_dir = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
+    lang_dir = Path(config_dir) / "aicli"
+    lang_dir.mkdir(parents=True, exist_ok=True)
+    lang_file = lang_dir / "lang.json"
     lang_file.write_text(json.dumps({"lang": lang}), encoding="utf-8")
     set_lang(lang)
 

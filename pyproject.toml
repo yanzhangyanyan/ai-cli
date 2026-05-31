@@ -1,6 +1,6 @@
 [project]
 name = "aicommand"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-Powered Command Line Agent — Describe what you want, it executes for you"
 readme = "README.md"
 license = "AGPL-3.0"

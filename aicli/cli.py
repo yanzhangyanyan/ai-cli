@@ -9,6 +9,7 @@ from .config import is_configured, first_run_setup, config_command, get_llm_conf
 from .llm import get_client, get_model, build_env_info
 from .session import SessionManager
 from .reactor import run_task
+from .i18n import t, init_lang_from_config, save_lang, first_run_lang_select
 
 CTRL_C_COUNT = 0
 
@@ -17,7 +18,7 @@ async def _cli_sudo_password_callback() -> str:
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None,
-        lambda: getpass.getpass("  [sudo] password: "),
+        lambda: getpass.getpass(t("sudo_prompt")),
     )
 
 
@@ -29,9 +30,9 @@ def _safe_input(prompt: str) -> str:
         CTRL_C_COUNT += 1
         print("^C")
         if CTRL_C_COUNT >= 3:
-            print("\n  [!] 连续 3 次 Ctrl+C，退出")
+            print(t("ctrl_c_exit"))
             raise SystemExit(0)
-        print("  [i] Ctrl+C 不退出 aicli，输入 quit/exit 退出\n")
+        print(t("ctrl_c_hint"))
         return ""
     except EOFError:
         raise SystemExit(0)
@@ -39,6 +40,8 @@ def _safe_input(prompt: str) -> str:
 
 async def interactive(host: str | None = None, **connect_kwargs):
     global CTRL_C_COUNT
+
+    init_lang_from_config()
 
     mgr = SessionManager()
     mgr.set_sudo_password_callback(_cli_sudo_password_callback)
@@ -49,45 +52,45 @@ async def interactive(host: str | None = None, **connect_kwargs):
     is_local = connect_kwargs.pop("local", False)
 
     print("aicli v0.6.0 — AI-Powered Command Line Agent (Agent)")
-    print("AI 智能远程运维 Agent\n")
+    print(t("banner_sub"))
 
     if not is_configured():
-        print("未检测到 LLM 配置。\n")
+        print(t("not_configured"))
         ok = first_run_setup()
         if not ok:
-            print("aicli 需要 LLM 才能工作。配置后重新启动。")
+            print(t("setup_required"))
             return
         print()
 
     llm_cfg = get_llm_config()
-    thinking_status = "思考" if llm_cfg.get("thinking") else "快速"
+    thinking_status = "thinking" if llm_cfg.get("thinking") else "fast"
 
     try:
         model = get_model()
         client = get_client()
         client.models.list()
-        print(f"  LLM:   {model} [{thinking_status}模式]")
+        print(t("llm_label", model=model, mode=thinking_status))
     except Exception as e:
-        print(f"  LLM:   不可用 ({e})")
-        print("         运行 'config setup' 重新配置")
-    print(f"  API:   {llm_cfg.get('base_url', '?')}")
+        print(f"  LLM:   unavailable ({e})")
+        print("         run 'config setup' to reconfigure")
+    print(t("api_label", api=llm_cfg.get('base_url', '?')))
     print()
-    print("  模式:   Agent 自主执行（低风险自动，高风险确认）")
+    print(t("mode_label"))
     print()
-    print("  config          查看配置 | config model 切换模型")
-    print("  context <描述>  设置项目上下文")
-    print("  help            全部命令")
+    print(t("config_hint"))
+    print(t("context_hint"))
+    print(t("help_hint"))
     print()
 
     if is_local:
         result = await mgr.create_local()
         session_id = result["session_id"]
         probe_data = result["probe"]
-        print(f"[OK] 本机模式 | {probe_data['os']} | {probe_data['cpu_cores']}核/{probe_data['memory_gb']}GB")
+        print(t("local_connected", os=probe_data['os'], cores=probe_data['cpu_cores'], ram=probe_data['memory_gb']))
         if probe_data.get("installed"):
             items = ", ".join(f"{k}={v}" for k, v in probe_data["installed"].items() if v)
             if items:
-                print(f"  已装: {items}")
+                print(t("installed", items=items))
         print()
         _print_usage_after_connect(probe_data)
 
@@ -116,16 +119,16 @@ async def interactive(host: str | None = None, **connect_kwargs):
             config_command(parts[1:])
         elif cmd == "context":
             if len(parts) < 2:
-                print(f"  当前上下文: {context or '(未设置)'}\n")
+                print(t("context_current", ctx=context or '-'))
             elif parts[1] == "clear":
                 context = ""
-                print("  [OK] 上下文已清除\n")
+                print(t("context_clear"))
             else:
                 context = line.split(maxsplit=1)[1]
-                print(f"  [OK] 上下文已设置: {context[:60]}...\n" if len(context) > 60 else f"  [OK] 上下文已设置\n")
+                print(t("context_set"))
         elif cmd == "connect":
             if session_id:
-                print("已有连接，先 disconnect\n")
+                print(t("already_connected"))
                 continue
             rest = line.split(maxsplit=1)
             arg = rest[1] if len(rest) > 1 else ""
@@ -134,29 +137,29 @@ async def interactive(host: str | None = None, **connect_kwargs):
                 session_id, probe_data = result
         elif cmd == "local":
             if session_id:
-                print("已有连接，先 disconnect\n")
+                print(t("already_connected"))
                 continue
             result = await mgr.create_local()
             session_id = result["session_id"]
             probe_data = result["probe"]
-            print(f"[OK] 本机模式 | {probe_data['os']} | {probe_data['cpu_cores']}核/{probe_data['memory_gb']}GB")
+            print(t("local_connected", os=probe_data['os'], cores=probe_data['cpu_cores'], ram=probe_data['memory_gb']))
             if probe_data.get("installed"):
                 items = ", ".join(f"{k}={v}" for k, v in probe_data["installed"].items() if v)
                 if items:
-                    print(f"  已装: {items}")
+                    print(t("installed", items=items))
             print()
             _print_usage_after_connect(probe_data)
         elif cmd == "disconnect":
             if session_id:
                 msg = await mgr.close(session_id)
-                print(f"[OK] {msg}\n")
+                print(t("disconnected", msg=msg))
                 session_id = None
                 probe_data = None
             else:
-                print("未连接\n")
+                print(t("not_connected"))
         elif cmd == "probe":
             if not session_id:
-                print("未连接\n")
+                print(t("not_connected"))
                 continue
             conn = mgr.get(session_id)
             p = await conn.probe()
@@ -164,16 +167,16 @@ async def interactive(host: str | None = None, **connect_kwargs):
             _print_probe(probe_data)
         elif cmd == "sessions":
             for s in mgr.list_sessions():
-                st = "[OK] 已连接" if s["connected"] else "[X] 断开"
+                st = "[OK] connected" if s["connected"] else "[X] disconnected"
                 print(f"  {s['session_id']} — {st}")
             print()
         elif cmd == "exec":
             if not session_id:
-                print("未连接\n")
+                print(t("not_connected"))
                 continue
             rest = line.split(maxsplit=1)
             if len(rest) < 2:
-                print("用法: exec <command>\n")
+                print(t("usage_exec"))
                 continue
             conn = mgr.get(session_id)
             result = await conn.exec(rest[1])
@@ -186,11 +189,11 @@ async def interactive(host: str | None = None, **connect_kwargs):
             print()
         elif cmd == "file_read":
             if not session_id:
-                print("未连接\n")
+                print(t("not_connected"))
                 continue
             rest = line.split(maxsplit=1)
             if len(rest) < 2:
-                print("用法: file_read <path>\n")
+                print(t("usage_file_read"))
                 continue
             conn = mgr.get(session_id)
             try:
@@ -200,25 +203,25 @@ async def interactive(host: str | None = None, **connect_kwargs):
                 print(f"[X] {e}\n")
         elif cmd == "file_write":
             if not session_id:
-                print("未连接\n")
+                print(t("not_connected"))
                 continue
             rest = line.split(maxsplit=2)
             if len(rest) < 3:
-                print("用法: file_write <path> <content>\n")
+                print(t("usage_file_write"))
                 continue
             conn = mgr.get(session_id)
             try:
                 await conn.file_write(rest[1], rest[2])
-                print(f"[OK] 已写入 {rest[1]}\n")
+                print(f"[OK] written to {rest[1]}\n")
             except Exception as e:
                 print(f"[X] {e}\n")
         elif cmd == "run":
             if not session_id:
-                print("未连接，先 connect\n")
+                print(t("not_connected_run"))
                 continue
             rest = line.split(maxsplit=1)
             if len(rest) < 2:
-                print("用法: run <任务描述>\n")
+                print(t("usage_run"))
                 continue
             conn = mgr.get(session_id)
             print(f"\n{'=' * 50}")
@@ -236,7 +239,7 @@ async def interactive(host: str | None = None, **connect_kwargs):
                 if result:
                     task_history.append(f"「{rest[1][:40]}」→ {result}")
             except KeyboardInterrupt:
-                print("\n  [⏸] 任务已暂停\n")
+                print("\n  [⏸] task paused\n")
         else:
             if session_id:
                 conn = mgr.get(session_id)
@@ -253,15 +256,15 @@ async def interactive(host: str | None = None, **connect_kwargs):
                         session_memory=task_history,
                     )
                     if result:
-                        task_history.append(f"「{line[:40]}」→ {result}")
+                        task_history.append(f"[{line[:40]}] -> {result}")
                 except KeyboardInterrupt:
-                    print("\n  [⏸] 任务已暂停\n")
+                    print("\n  [⏸] task paused\n")
             else:
-                print(f"未知命令: {cmd}，输入 help 查看帮助\n")
+                print(t("unknown_cmd", cmd=cmd))
 
     if session_id:
         await mgr.close(session_id)
-    print("bye")
+    print(t("byz"))
 
 
 def _print_usage_after_connect(probe_data: dict | None):
@@ -290,53 +293,12 @@ def _print_usage_after_connect(probe_data: dict | None):
 
 
 def _print_help(connected: bool):
-    print(f"""
-aicli v0.5.0 — AI-Powered Command Line Agent (Agent)
-
-LLM 配置:
-  config                              查看当前配置
-  config setup                        重新配置（向导模式）
-  config model [模型名]                切换模型
-  config thinking [on|off]            切换思考模式
-  config api                          修改 API 地址/密钥
-  config reset                        清除配置
-
-连接:
-  local                               本机模式（在本机智能执行命令）
-  connect <user@host[:port]> [密码]   连接远程主机
-  disconnect                          断开
-  sessions                            查看连接
-
-系统:
-  probe                               探测系统信息
-
-操作:
-  exec <命令>                         手动执行单条命令
-  file_read <路径>                    读取远程文件
-  file_write <路径> <内容>            写入远程文件
-
-上下文:
-  context <描述>                      设置项目上下文（Agent 会记住目标和背景）
-  context                             查看当前上下文
-  context clear                       清除上下文
-
-AI 任务:
-  run <任务描述>                      Agent 规划并执行任务
-  <自然语言>                          连接状态下直接输入（等同于 run）
-
-执行中控制:
-  [auto]           Agent 自动执行（低风险）
-  [需确认] Y/回车   确认执行高风险操作
-         n         跳过当前步骤
-         <任意文字>  当作反馈传给 Agent 调整方案
-  Ctrl+C           暂停当前任务，可输入反馈后继续
-  quit/exit         退出 aicli（Ctrl+C 不退出，只暂停）
-""")
+    print(t("help_text", version="0.6.0"))
 
 
 async def _handle_connect(mgr: SessionManager, arg: str):
     if not arg:
-        print("用法: connect <user@host[:port]> [password]\n")
+        print(t("usage_connect"))
         return None
 
     password = None
@@ -362,16 +324,16 @@ async def _handle_connect(mgr: SessionManager, arg: str):
 
 async def _do_connect(mgr: SessionManager, host: str, kwargs: dict):
     port = kwargs.get("port", 22)
-    print(f"... 连接 {kwargs.get('username', 'root')}@{host}:{port}...")
+    print(t("connecting", user=kwargs.get('username', 'root'), host=host, port=port))
     try:
         result = await mgr.create_ssh(host=host, **kwargs)
         sid = result["session_id"]
         probe = result["probe"]
-        print(f"[OK] 已连接 | {probe['os']} | {probe['cpu_cores']}核/{probe['memory_gb']}GB/{probe['disk_total_gb']}GB")
+        print(t("connected", os=probe['os'], cores=probe['cpu_cores'], ram=probe['memory_gb'], disk=probe['disk_total_gb']))
         if probe.get("installed"):
             items = ", ".join(f"{k}={v}" for k, v in probe["installed"].items() if v)
             if items:
-                print(f"  已装: {items}")
+                print(t("installed", items=items))
         print()
         return sid, probe
     except Exception as e:
@@ -384,37 +346,35 @@ def _print_connect_error(host: str, port: int, error: Exception):
     is_timeout = any(k in err_str.lower() for k in ("timeout", "timed out", "信号灯", "121"))
     is_refused = any(k in err_str.lower() for k in ("refused", "10061", "connection refused"))
 
-    print(f"[X] 连接失败: {error}")
+    print(t("connect_failed", error=error))
 
     if is_timeout or is_refused:
         reachable = _check_port(host, port)
         if not reachable:
-            print(f"\n  端口 {port} 不可达，可能原因：")
-            print(f"    1. 目标机器未开启 SSH 服务")
-            print(f"    2. 防火墙阻止了端口 {port}")
-            print(f"    3. IP 地址或端口错误")
+            print(t("port_unreachable", port=port))
+            print(t("cause_no_ssh"))
+            print(t("cause_firewall", port=port))
+            print(t("cause_wrong_addr"))
 
             if port == 22:
-                print(f"\n  如果目标机器是 Windows，需先安装 OpenSSH Server：")
-                print(f"    # 在目标机器上以管理员身份运行 PowerShell：")
-                print(f"    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0")
-                print(f"    Start-Service sshd")
-                print(f"    Set-Service -Name sshd -StartupType Automatic")
+                print(t("install_windows"))
+                print(t("install_win_cmd1"))
+                print(t("install_win_cmd2"))
+                print(t("install_win_cmd3"))
                 print()
-                print(f"  如果目标机器是 Linux：")
-                print(f"    sudo apt install openssh-server   # Debian/Ubuntu")
-                print(f"    sudo yum install openssh-server   # CentOS/RHEL")
-                print(f"    sudo systemctl start sshd")
+                print(t("install_linux"))
+                print(t("install_linux_cmd1"))
+                print(t("install_linux_cmd2"))
+                print(t("install_linux_cmd3"))
         else:
-            print(f"\n  端口 {port} 可达但连接失败，可能是认证问题。")
-            print(f"    检查用户名和密码是否正确。")
+            print(t("port_ok_auth", port=port))
     print()
 
 
 def _update_command(extra_args: list[str]):
     import json as _json
 
-    GITHUB_API = "https://api.github.com/repos/yanzhangyanyan/aicli/releases/latest"
+    GITHUB_API = "https://api.github.com/repos/yanzhangyanyan/ai-cli/releases/latest"
     CURRENT = __import__("aicli").__version__
 
     print("aiCLI update\n")
@@ -456,15 +416,15 @@ def _update_command(extra_args: list[str]):
         print(f"    uv sync")
         print()
         print("    # Or reinstall")
-        print(f"    pip install --upgrade aicli")
-        print(f"    uv tool install git+https://github.com/yanzhangyanyan/aicli.git")
+        print(f"    pip install --upgrade aicommand")
+        print(f"    uv tool install git+https://github.com/yanzhangyanyan/ai-cli.git")
 
     except Exception as e:
         print(f"  Failed to check updates: {e}")
         print()
         print("  Manual update:")
         print("    git pull && uv sync")
-        print("    pip install --upgrade aicli")
+        print("    pip install --upgrade aicommand")
 
 
 def _check_port(host: str, port: int, timeout: float = 5.0) -> bool:
@@ -501,7 +461,7 @@ def main():
         try:
             asyncio.run(interactive())
         except KeyboardInterrupt:
-            print("\nbye")
+            pass
         return
 
     if args[0] == "config":
@@ -540,28 +500,12 @@ def main():
         elif args[i] == "--local":
             kwargs["local"] = True
             i += 1
+        elif args[i] == "--lang" and i + 1 < len(args):
+            save_lang(args[i + 1])
+            i += 2
         elif args[i] in ("-h", "--help"):
-            print("aicli v0.5.0 — AI-Powered Command Line Agent (Agent)\n")
-            print("用法:")
-            print("  aicli                            启动交互模式（首次运行自动配置向导）")
-            print("  aicli --local                    本机模式（在本机智能执行命令）")
-            print("  aicli config                     查看当前 LLM 配置")
-            print("  aicli config setup               重新配置 LLM（向导）")
-            print("  aicli config model [名称]         切换模型")
-            print("  aicli config thinking [on|off]    切换思考模式")
-            print("  aicli config api                 修改 API 地址/密钥")
-            print("  aicli config reset               清除配置")
-            print()
-            print("启动选项:")
-            print("  --host <host>       启动时自动连接")
-            print("  --port <port>       SSH 端口 (默认22)")
-            print("  --user <user>       用户名 (默认root)")
-            print("  --password <pwd>    密码")
-            print("  --llm <url>         LLM API 地址")
-            print("  --model <model>     LLM 模型名")
-            print()
-            print("配置优先级: 命令行参数 > 环境变量 > 配置文件")
-            print(f"配置文件: {config_file_path}")
+            init_lang_from_config()
+            print(t("cli_help", version="0.6.0", config_path=config_file_path))
             sys.exit(0)
         else:
             i += 1
@@ -569,4 +513,4 @@ def main():
     try:
         asyncio.run(interactive(host=host, **kwargs))
     except KeyboardInterrupt:
-        print("\nbye")
+        print("\n" + t("byz"))

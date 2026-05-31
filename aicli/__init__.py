@@ -1,3 +1,3 @@
-"""aicli — AI 智能远程运维 Agent"""
+"""aicli — AI-Powered Command Line Agent"""
 
-__version__ = "0.6.0"
+__version__ = "0.1.1"
