@@ -1,11 +1,11 @@
 [project]
 name = "aicommand"
 version = "0.1.4"
-description = "AI-Powered Command Line Agent — Describe what you want, it executes for you"
+description = "AI-powered CLI agent — describe tasks in natural language, it plans and executes commands autonomously. Supports local, SSH Linux, SSH Windows. Like ChatGPT for your terminal."
 readme = "README.md"
 license = "AGPL-3.0"
 requires-python = ">=3.11"
-keywords = ["ai", "cli", "agent", "ssh", "automation", "llm", "mcp", "devops", "remote", "shell"]
+keywords = ["ai", "cli", "agent", "ssh", "llm", "mcp", "devops", "automation", "shell", "remote-execution", "natural-language", "sysadmin", "ollama", "openai", "python", "terminal", "command-line", "ai-agent", "chatgpt-cli", "ai-automation", "ssh-agent", "ai-shell", "natural-language-shell", "ai-devops", "linux-admin"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

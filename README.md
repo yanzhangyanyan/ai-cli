@@ -1,10 +1,21 @@
 <p align="center">
-  <img src="assets/logo.png" alt="aiCLI Logo" width="400">
+  <img src="assets/logo.png" alt="aiCLI - AI Command Line Agent Logo" width="400">
 </p>
 
-# aiCLI — AI-Powered Command Line Agent
+<h1 align="center">aiCLI — AI-Powered Command Line Agent</h1>
 
-> **You speak, it executes.** Describe what you want in natural language — aiCLI plans the steps, runs the commands, and handles errors autonomously.
+<p align="center">
+  <strong>Natural language to command execution.</strong> Describe what you want, it plans the steps, runs the commands, and handles errors autonomously.<br>
+  Like ChatGPT for your terminal. Supports <strong>local</strong>, <strong>SSH Linux</strong>, and <strong>SSH Windows</strong>.
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/aicommand/"><img src="https://img.shields.io/pypi/v/aicommand?color=blue&label=pip%20install%20aicommand" alt="PyPI"></a>
+  <a href="https://github.com/yanzhangyanyan/ai-cli/releases"><img src="https://img.shields.io/github/v/release/yanzhangyanyan/ai-cli?color=green" alt="Release"></a>
+  <a href="https://github.com/yanzhangyanyan/ai-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-purple" alt="License"></a>
+  <img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python">
+  <img src="https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey" alt="Platform">
+</p>
 
 <p align="center">
   <strong>爱 CLI</strong> — Because nobody remembers all those commands.<br>
@@ -15,11 +26,15 @@
   <a href="#english">English</a> | <a href="#中文">中文</a>
 </p>
 
+<p align="center">
+  <!-- HTML keywords for search engines: ai cli, ai command line, ai terminal agent, natural language shell, ai ssh tool, ai devops, chatgpt terminal, llm cli, autonomous agent, ai automation -->
+</p>
+
 ---
 
 <a id="english"></a>
 
-## 😤 Sound Familiar?
+## 😤 Sound Familiar? (Or: Why You Need an AI Terminal Agent)
 
 - Can't remember the exact `grep`/`awk`/`sed` flags to extract that field?
 - Every time you install software, you Google the tutorial? Docker, Nginx, MySQL — all different?
