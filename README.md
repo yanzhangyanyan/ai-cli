@@ -67,14 +67,24 @@ aicli> install Docker and Docker Compose
 
 ## Quick Start
 
+### Option 1: Install via pip / uv (Recommended)
+
 ```bash
-# Install
 pip install ai-cli
 # or
 uv tool install ai-cli
 
-# Run (first run auto-configures LLM)
+# Run
 aicli --local
+```
+
+### Option 2: Run from Source
+
+```bash
+git clone https://github.com/yanzhangyanyan/ai-cli.git
+cd ai-cli
+uv sync
+uv run aicli --local
 ```
 
 ### Prerequisites
@@ -186,17 +196,6 @@ Any OpenAI-compatible API:
 | Ollama (local) | `http://localhost:11434/v1` | Any local model |
 | LiteLLM (proxy) | `http://localhost:4000/v1` | Unified gateway |
 
-## Installation
-
-### From Source
-
-```bash
-git clone https://github.com/yanzhangyanyan/ai-cli.git
-cd aicli
-uv sync
-uv run aicli --local
-```
-
 ## License
 
 GNU Affero General Public License v3.0 (AGPL-3.0) — free to use and modify, but all derivative works must also be open source. Cloud service providers using modified versions must provide source code to users.
@@ -254,14 +253,24 @@ aicli> 安装 Docker 和 Docker Compose
 
 ## 快速开始
 
+### 方式一：pip / uv 安装（推荐）
+
 ```bash
-# 安装
 pip install ai-cli
 # 或者
 uv tool install ai-cli
 
-# 运行（首次运行自动配置 LLM，支持中文界面）
+# 运行
 aicli --local
+```
+
+### 方式二：源码运行
+
+```bash
+git clone https://github.com/yanzhangyanyan/ai-cli.git
+cd ai-cli
+uv sync
+uv run aicli --local
 ```
 
 ### 前提条件
@@ -372,15 +381,6 @@ context <描述>                      设置项目上下文
 | 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | GLM-4、GLM-5 |
 | Ollama（本地） | `http://localhost:11434/v1` | 任意本地模型 |
 | LiteLLM（代理） | `http://localhost:4000/v1` | 统一网关 |
-
-## 从源码安装
-
-```bash
-git clone https://github.com/yanzhangyanyan/ai-cli.git
-cd aicli
-uv sync
-uv run aicli --local
-```
 
 ## 许可证
 
