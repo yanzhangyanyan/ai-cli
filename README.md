@@ -256,9 +256,9 @@ aicli> 安装 Docker 和 Docker Compose
 
 ```bash
 # 安装
-pip install aicli
+pip install ai-cli
 # 或者
-uv tool install aicli
+uv tool install ai-cli
 
 # 运行（首次运行自动配置 LLM，支持中文界面）
 aicli --local
