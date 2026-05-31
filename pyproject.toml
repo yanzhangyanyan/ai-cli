@@ -1,6 +1,6 @@
 [project]
 name = "aicommand"
-version = "0.1.4"
+version = "0.1.5"
 description = "AI-powered CLI agent — describe tasks in natural language, it plans and executes commands autonomously. Supports local, SSH Linux, SSH Windows. Like ChatGPT for your terminal."
 readme = "README.md"
 license = "AGPL-3.0"
