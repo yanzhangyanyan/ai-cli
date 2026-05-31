@@ -35,6 +35,9 @@ Issues = "https://github.com/yanzhangyanyan/ai-cli/issues"
 [tool.uv]
 package = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["aicli"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
