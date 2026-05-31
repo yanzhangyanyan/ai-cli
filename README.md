@@ -70,12 +70,17 @@ aicli> install Docker and Docker Compose
 ### Option 1: Install via pip / uv (Recommended)
 
 ```bash
+# Install
 pip install aicommand
 # or
 uv tool install aicommand
 
 # Run
 aicli --local
+
+# Switch language (English / 中文)
+aicli --lang en --local
+aicli --lang zh --local
 ```
 
 ### Option 2: Run from Source
@@ -262,6 +267,10 @@ uv tool install aicommand
 
 # 运行
 aicli --local
+
+# 切换语言（English / 中文）
+aicli --lang en --local
+aicli --lang zh --local
 ```
 
 ### 方式二：源码运行
