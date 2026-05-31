@@ -70,9 +70,9 @@ aicli> install Docker and Docker Compose
 ### Option 1: Install via pip / uv (Recommended)
 
 ```bash
-pip install ai-cli
+pip install aicommand
 # or
-uv tool install ai-cli
+uv tool install aicommand
 
 # Run
 aicli --local
@@ -256,9 +256,9 @@ aicli> 安装 Docker 和 Docker Compose
 ### 方式一：pip / uv 安装（推荐）
 
 ```bash
-pip install ai-cli
+pip install aicommand
 # 或者
-uv tool install ai-cli
+uv tool install aicommand
 
 # 运行
 aicli --local
