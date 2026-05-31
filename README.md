@@ -191,7 +191,7 @@ Any OpenAI-compatible API:
 ### From Source
 
 ```bash
-git clone https://github.com/yanzhangyanyan/aicli.git
+git clone https://github.com/yanzhangyanyan/ai-cli.git
 cd aicli
 uv sync
 uv run aicli --local
@@ -376,7 +376,7 @@ context <描述>                      设置项目上下文
 ## 从源码安装
 
 ```bash
-git clone https://github.com/yanzhangyanyan/aicli.git
+git clone https://github.com/yanzhangyanyan/ai-cli.git
 cd aicli
 uv sync
 uv run aicli --local

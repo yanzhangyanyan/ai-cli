@@ -1,5 +1,5 @@
 [project]
-name = "aicli"
+name = "ai-cli"
 version = "0.1.0"
 description = "AI-Powered Command Line Agent — Describe what you want, it executes for you"
 readme = "README.md"
@@ -10,7 +10,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -28,9 +28,9 @@ dependencies = [
 aicli = "aicli.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/chzy40307891/aicli"
-Repository = "https://github.com/chzy40307891/aicli"
-Issues = "https://github.com/chzy40307891/aicli/issues"
+Homepage = "https://github.com/yanzhangyanyan/ai-cli"
+Repository = "https://github.com/yanzhangyanyan/ai-cli"
+Issues = "https://github.com/yanzhangyanyan/ai-cli/issues"
 
 [tool.uv]
 package = true
