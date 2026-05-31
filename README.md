@@ -199,7 +199,7 @@ uv run aicli --local
 
 ## License
 
-MIT License — use it however you want.
+GNU Affero General Public License v3.0 (AGPL-3.0) — free to use and modify, but all derivative works must also be open source. Cloud service providers using modified versions must provide source code to users.
 
 ---
 ---
@@ -384,7 +384,7 @@ uv run aicli --local
 
 ## 许可证
 
-MIT License — 随意使用。
+GNU Affero General Public License v3.0 (AGPL-3.0) — 自由使用和修改，但所有衍生作品必须开源。云服务商使用修改版本必须向用户提供源代码。
 
 ---
 
