@@ -69,9 +69,9 @@ aicli> install Docker and Docker Compose
 
 ```bash
 # Install
-pip install aicli
+pip install ai-cli
 # or
-uv tool install aicli
+uv tool install ai-cli
 
 # Run (first run auto-configures LLM)
 aicli --local
